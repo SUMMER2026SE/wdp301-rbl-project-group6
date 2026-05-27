@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import logoImg from "../../../assets/logo.png";
+import loginImg from "../../../assets/login.png";
 import { LoginForm } from "../components/LoginForm";
 
 const LoginPage: React.FC = () => {
@@ -30,7 +31,7 @@ const LoginPage: React.FC = () => {
           <div className="relative w-full max-w-[320px] aspect-square rounded-2xl overflow-hidden shadow-2xl group">
             <img
               className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0cQKX_cmLv7f0FxiTLGxAy9rT77Rl0Udh26-uPOKXjk3RCcqglDLDzSOMXx2QBy-IqL49LLKsCjXw_Mmu4i93C0xD62JaIuERVnSG8NySmmJ8LVadtNnU-8poP-Mhh83xuX6Xyw-onspaJqMAvGaoJFgM2zVZ9ZzM0ifyOmn15g58UEt8UJZJc-ZzeMFGqKi7RQHcHxLxTKXrZQk8nzAYcqrn9nPz77k0_bgntw_hhtME036p6yhPWATWJ92Gdf59R2IpAOVrup4"
+              src={loginImg}
               alt="Home maintenance illustration"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-primary/40 to-transparent"></div>
