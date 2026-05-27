@@ -1,6 +1,14 @@
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Document, Schema, Types } from "mongoose";
 
 export type UserRole = "CUSTOMER" | "PROVIDER" | "ADMIN";
+
+export interface IUserSession {
+  _id: Types.ObjectId;
+  refreshTokenHash: string;
+  expiresAt: Date;
+  revokedAt?: Date;
+  createdAt?: Date;
+}
 
 export interface IUser extends Document {
   email: string;
@@ -20,7 +28,28 @@ export interface IUser extends Document {
 
   resetPasswordOtp?: string;
   resetPasswordOtpExpire?: Date;
+
+  sessions: IUserSession[];
 }
+
+const UserSessionSchema = new Schema<IUserSession>(
+  {
+    refreshTokenHash: {
+      type: String,
+      required: true
+    },
+    expiresAt: {
+      type: Date,
+      required: true
+    },
+    revokedAt: Date,
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  },
+  { _id: true }
+);
 
 const UserSchema = new Schema<IUser>(
   {
@@ -69,7 +98,12 @@ const UserSchema = new Schema<IUser>(
     resetPasswordExpire: Date,
 
     resetPasswordOtp: String,
-    resetPasswordOtpExpire: Date
+    resetPasswordOtpExpire: Date,
+
+    sessions: {
+      type: [UserSessionSchema],
+      default: []
+    }
   },
   { timestamps: true }
 );

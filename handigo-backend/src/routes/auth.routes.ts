@@ -26,6 +26,7 @@ router.post(
   authController.resendRegisterOtp,
 );
 router.post("/login", validate(loginSchema), authController.login);
+router.post("/refresh-token", authController.refreshToken);
 router.post(
   "/forgot-password",
   validate(forgotPasswordSchema),
@@ -43,6 +44,6 @@ router.post(
   authController.changePassword,
 );
 router.post("/logout", authController.logout);
-router.get("/me", authMiddleware, authController.me);
+router.get("/me", authMiddleware, authController.getProfile);
 
 export default router;
