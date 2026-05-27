@@ -1,4 +1,7 @@
 import bcrypt from "bcrypt";
+import { randomBytes } from "crypto";
+import axios from "axios";
+import { OAuth2Client } from "google-auth-library";
 import User, { IUser } from "../models/user.model";
 import { generateOtp, getOtpExpireDate, hashOtp } from "../utils/otp";
 import { sendOtpEmail } from "../utils/mail";
@@ -6,6 +9,16 @@ import { signAccessToken } from "../utils/token";
 import { AppError } from "../utils/appError";
 
 const SALT_ROUNDS = 10;
+
+const getGoogleClient = (): OAuth2Client => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+
+  if (!clientId) {
+    throw new AppError("GOOGLE_CLIENT_ID is not configured", 500);
+  }
+
+  return new OAuth2Client(clientId);
+};
 
 type AuthUserResponse = {
   id: string;
@@ -154,6 +167,141 @@ export const login = async (
       role: user.role,
       status: user.status,
       isEmailVerified: user.isEmailVerified,
+    },
+  };
+};
+
+export const googleLogin = async (googleToken: string) => {
+  const client = getGoogleClient();
+  const ticket = await client.verifyIdToken({
+    idToken: googleToken,
+    audience: process.env.GOOGLE_CLIENT_ID as string,
+  });
+
+  const payload = ticket.getPayload();
+  if (!payload?.email || payload.email_verified !== true) {
+    throw new AppError("Google login failed: invalid or unverified Google account", 400);
+  }
+
+  const { email, name, picture } = payload;
+  const user = await User.findOne({ email });
+
+  if (user && (user.status === "BANNED" || user.status === "INACTIVE")) {
+    throw new AppError("Account is not allowed to login", 403);
+  }
+
+  let authenticatedUser = user;
+
+  if (!authenticatedUser) {
+    const randomPassword = randomBytes(32).toString("hex");
+    const passwordHash = await bcrypt.hash(randomPassword, SALT_ROUNDS);
+
+    authenticatedUser = await User.create({
+      email,
+      fullName: name || email.split("@")[0],
+      passwordHash,
+      avatar: picture,
+      role: "CUSTOMER",
+      status: "ACTIVE",
+      isEmailVerified: true,
+    });
+  } else if (!authenticatedUser.isEmailVerified) {
+    authenticatedUser.isEmailVerified = true;
+    await authenticatedUser.save();
+  }
+
+  const token = signAccessToken(authenticatedUser);
+
+  return {
+    token,
+    user: {
+      id: authenticatedUser._id.toString(),
+      email: authenticatedUser.email,
+      fullName: authenticatedUser.fullName,
+      phone: authenticatedUser.phone,
+      avatar: authenticatedUser.avatar,
+      role: authenticatedUser.role,
+      status: authenticatedUser.status,
+      isEmailVerified: authenticatedUser.isEmailVerified,
+    },
+  };
+};
+
+export const facebookLogin = async (accessToken: string) => {
+  const appId = process.env.FACEBOOK_APP_ID;
+  const appSecret = process.env.FACEBOOK_APP_SECRET;
+
+  if (!appId || !appSecret) {
+    throw new AppError("Facebook app credentials are not configured", 500);
+  }
+
+  // Verify token with Facebook Graph API
+  const appToken = `${appId}|${appSecret}`;
+  const debugRes = await axios.get("https://graph.facebook.com/debug_token", {
+    params: { input_token: accessToken, access_token: appToken },
+  });
+
+  const { is_valid, user_id } = debugRes.data?.data ?? {};
+  if (!is_valid || !user_id) {
+    throw new AppError("Invalid Facebook access token", 400);
+  }
+
+  // Get user profile
+  const profileRes = await axios.get(`https://graph.facebook.com/${user_id}`, {
+    params: {
+      fields: "id,name,email,picture.type(large)",
+      access_token: accessToken,
+    },
+  });
+
+  const { email, name, picture } = profileRes.data;
+
+  if (!email) {
+    throw new AppError(
+      "Facebook account does not have a public email. Please use another login method.",
+      400,
+    );
+  }
+
+  const existingUser = await User.findOne({ email });
+
+  if (existingUser && (existingUser.status === "BANNED" || existingUser.status === "INACTIVE")) {
+    throw new AppError("Account is not allowed to login", 403);
+  }
+
+  let authenticatedUser = existingUser;
+
+  if (!authenticatedUser) {
+    const randomPassword = randomBytes(32).toString("hex");
+    const passwordHash = await bcrypt.hash(randomPassword, SALT_ROUNDS);
+
+    authenticatedUser = await User.create({
+      email,
+      fullName: name || email.split("@")[0],
+      passwordHash,
+      avatar: picture?.data?.url ?? null,
+      role: "CUSTOMER",
+      status: "ACTIVE",
+      isEmailVerified: true,
+    });
+  } else if (!authenticatedUser.isEmailVerified) {
+    authenticatedUser.isEmailVerified = true;
+    await authenticatedUser.save();
+  }
+
+  const token = signAccessToken(authenticatedUser);
+
+  return {
+    token,
+    user: {
+      id: authenticatedUser._id.toString(),
+      email: authenticatedUser.email,
+      fullName: authenticatedUser.fullName,
+      phone: authenticatedUser.phone,
+      avatar: authenticatedUser.avatar,
+      role: authenticatedUser.role,
+      status: authenticatedUser.status,
+      isEmailVerified: authenticatedUser.isEmailVerified,
     },
   };
 };
