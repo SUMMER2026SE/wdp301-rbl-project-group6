@@ -1,5 +1,5 @@
 {
-  "name": "backend",
+  "name": "handigo-backend",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
@@ -11,7 +11,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "FixNow Backend Server",
+  "description": "Handigo Backend Server",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@payos/node": "^2.0.4",
