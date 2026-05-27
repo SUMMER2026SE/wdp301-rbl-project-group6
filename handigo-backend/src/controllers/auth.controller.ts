@@ -1,5 +1,20 @@
-import { Request, Response, NextFunction } from "express";
+import { CookieOptions, Request, Response, NextFunction } from "express";
 import * as authService from "../services/auth.service";
+
+const REFRESH_TOKEN_COOKIE = "refreshToken";
+
+const getRefreshTokenCookieOptions = (expires: Date): CookieOptions => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+  expires,
+});
+
+const clearRefreshTokenCookieOptions: CookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+};
 
 export const register = async (
   req: Request,
@@ -49,9 +64,42 @@ export const login = async (
 ) => {
   try {
     const result = await authService.login(req.body.email, req.body.password);
+    res.cookie(
+      REFRESH_TOKEN_COOKIE,
+      result.refreshToken,
+      getRefreshTokenCookieOptions(result.refreshTokenExpiresAt),
+    );
     res.json({
       message: "Login successful",
-      ...result,
+      token: result.token,
+      user: result.user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const refreshToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE];
+
+    if (!refreshToken) {
+      return res.status(401).json({ message: "Missing refresh token" });
+    }
+
+    const result = await authService.refreshToken(refreshToken);
+    res.cookie(
+      REFRESH_TOKEN_COOKIE,
+      result.refreshToken,
+      getRefreshTokenCookieOptions(result.refreshTokenExpiresAt),
+    );
+    res.json({
+      message: "Token refreshed successfully",
+      token: result.token,
     });
   } catch (error) {
     next(error);
@@ -141,12 +189,18 @@ export const changePassword = async (
   }
 };
 
-export const logout = async (req: Request, res: Response) => {
-  res.clearCookie("token");
-  res.json({ message: "Logout successful" });
+export const logout = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await authService.logout(req.cookies?.[REFRESH_TOKEN_COOKIE]);
+    res.clearCookie(REFRESH_TOKEN_COOKIE, clearRefreshTokenCookieOptions);
+    res.clearCookie("token");
+    res.json({ message: "Logout successful" });
+  } catch (error) {
+    next(error);
+  }
 };
 
-export const me = async (req: Request, res: Response, next: NextFunction) => {
+export const getProfile = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await authService.getCurrentUser(req.user!.id);
     res.json({ user });

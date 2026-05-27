@@ -2,17 +2,15 @@ import jwt, { SignOptions } from "jsonwebtoken";
 import { IUser } from "../models/user.model";
 
 const getAccessSecret = (): string => {
-  const secret = process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET;
+  return process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET || "supersecret";
+};
 
-  if (!secret) {
-    throw new Error("ACCESS_TOKEN_SECRET or JWT_SECRET must be defined");
-  }
-
-  return secret;
+export const getRefreshSecret = (): string => {
+  return process.env.REFRESH_TOKEN_SECRET || `${getAccessSecret()}:refresh`;
 };
 
 export const signAccessToken = (user: IUser): string => {
-  const expiresIn = (process.env.JWT_EXPIRES_IN || "1d") as SignOptions["expiresIn"];
+  const expiresIn = (process.env.JWT_EXPIRES_IN || "15m") as SignOptions["expiresIn"];
 
   return jwt.sign(
     {
@@ -21,6 +19,19 @@ export const signAccessToken = (user: IUser): string => {
       role: user.role,
     },
     getAccessSecret(),
+    { expiresIn },
+  );
+};
+
+export const signRefreshToken = (user: IUser, sessionId: string): string => {
+  const expiresIn = (process.env.REFRESH_TOKEN_EXPIRES_IN || "7d") as SignOptions["expiresIn"];
+
+  return jwt.sign(
+    {
+      id: user._id.toString(),
+      sessionId,
+    },
+    getRefreshSecret(),
     { expiresIn },
   );
 };
