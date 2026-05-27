@@ -5,22 +5,22 @@ dotenv.config();
 
 import app from "./app";
 import { connectDB } from "./configs/db";
-import { initSocket } from "./sockets/initSocket";
+// import { initSocket } from "./sockets/initSocket";
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
     await connectDB();
 
     const server = http.createServer(app);
-    initSocket(server);
+    // initSocket(server);
 
     server.listen(PORT, () => {
-      console.log(`Server đang chạy trên cổng ${PORT}`);
+      console.log(`Server is running on port ${PORT}`);
     });
   } catch (error) {
-    console.error("Không thể khởi động server:", error);
+    console.error("Cannot start server:", error);
     process.exit(1);
   }
 };

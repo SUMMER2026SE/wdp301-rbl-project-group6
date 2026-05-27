@@ -5,13 +5,13 @@ export const validate =
   (schema: ZodSchema<any>) =>
   (req: Request, res: Response, next: NextFunction) => {
     try {
-      schema.parse(req.body);
+      req.body = schema.parse(req.body);
 
       next();
     } catch (error: any) {
       return res.status(400).json({
         message: "Validation error",
-        errors: error.errors
+        errors: error.issues || error.errors
       });
     }
   };
