@@ -1,6 +1,13 @@
 declare global {
   interface Window {
-    FB: any;
+    FB: {
+      init: (params: {
+        appId: string | undefined;
+        cookie: boolean;
+        xfbml: boolean;
+        version: string;
+      }) => void;
+    };
     fbAsyncInit: () => void;
   }
 }
