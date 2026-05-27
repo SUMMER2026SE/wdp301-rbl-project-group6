@@ -273,10 +273,10 @@ export const googleLogin = async (googleToken: string) => {
     await authenticatedUser.save();
   }
 
-  const token = signAccessToken(authenticatedUser);
+  const tokens = await issueSessionTokens(authenticatedUser);
 
   return {
-    token,
+    ...tokens,
     user: {
       id: authenticatedUser._id.toString(),
       email: authenticatedUser.email,
@@ -304,9 +304,9 @@ export const facebookLogin = async (accessToken: string) => {
     params: { input_token: accessToken, access_token: appToken },
   });
 
-  const { is_valid, user_id } = debugRes.data?.data ?? {};
+  const { is_valid, user_id, error } = debugRes.data?.data ?? {};
   if (!is_valid || !user_id) {
-    throw new AppError("Invalid Facebook access token", 400);
+    throw new AppError(`Invalid Facebook access token: ${error?.message || "unknown error"}`, 400);
   }
 
   // Get user profile
@@ -321,7 +321,7 @@ export const facebookLogin = async (accessToken: string) => {
 
   if (!email) {
     throw new AppError(
-      "Facebook account does not have a public email. Please use another login method.",
+      "Tài khoản Facebook không có email. Vui lòng dùng phương thức đăng nhập khác hoặc thêm email vào tài khoản Facebook.",
       400,
     );
   }
@@ -352,10 +352,10 @@ export const facebookLogin = async (accessToken: string) => {
     await authenticatedUser.save();
   }
 
-  const token = signAccessToken(authenticatedUser);
+  const tokens = await issueSessionTokens(authenticatedUser);
 
   return {
-    token,
+    ...tokens,
     user: {
       id: authenticatedUser._id.toString(),
       email: authenticatedUser.email,

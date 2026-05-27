@@ -69,7 +69,7 @@ const UserSchema = new Schema<IUser>(
       required: true
     },
 
-    phone: String,
+    phone: { type: String, sparse: true },
     avatar: { type: String, default: null },
 
     role: {

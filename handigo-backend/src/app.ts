@@ -25,6 +25,7 @@ const app: Application = express();
 
 const allowedOrigins = [
   "http://localhost:5173",
+  "https://localhost:5173",
   "http://localhost:8081",
   "http://localhost:19006",
 ];
@@ -41,6 +42,12 @@ app.use(
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Fix COOP to allow Google OAuth popup
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  next();
+});
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   if (err instanceof SyntaxError && "body" in err) {

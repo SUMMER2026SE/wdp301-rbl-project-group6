@@ -11,8 +11,15 @@ export const connectDB = async (): Promise<void> => {
     }
 
     await mongoose.connect(MONGO_URI);
-
     console.log("MongoDB connected successfully!");
+
+    // Drop legacy unique index on phone if it exists
+    try {
+      await mongoose.connection.collection("users").dropIndex("phone_1");
+      console.log("Dropped legacy phone_1 index");
+    } catch {
+      // Index doesn't exist, ignore
+    }
   } catch (error) {
     console.error("MongoDB connection failed:", error);
     process.exit(1); 
