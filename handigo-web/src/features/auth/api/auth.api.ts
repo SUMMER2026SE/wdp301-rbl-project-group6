@@ -6,6 +6,16 @@ export const loginApi = async (data: LoginRequest): Promise<AuthResponse> => {
   return response.data;
 };
 
+export const googleLoginApi = async (credential: string): Promise<AuthResponse> => {
+  const response = await api.post<AuthResponse>('/auth/google-login', { credential });
+  return response.data;
+};
+
+export const facebookLoginApi = async (accessToken: string): Promise<AuthResponse> => {
+  const response = await api.post<AuthResponse>('/auth/facebook-login', { accessToken });
+  return response.data;
+};
+
 export const logoutApi = async (): Promise<{ message: string }> => {
   const response = await api.post<{ message: string }>('/auth/logout');
   return response.data;

@@ -1,5 +1,6 @@
 import { CookieOptions, Request, Response, NextFunction } from "express";
 import * as authService from "../services/auth.service";
+import { AppError } from "../utils/appError";
 
 const REFRESH_TOKEN_COOKIE = "refreshToken";
 
@@ -106,37 +107,47 @@ export const refreshToken = async (
   }
 };
 
-export const googleLogin = async (req: Request, res: Response) => {
+export const googleLogin = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { credential } = req.body;
-    if (!credential) throw new Error("Google credential is required");
+    if (!credential) throw new AppError("Google credential is required", 400);
 
     const result = await authService.googleLogin(credential);
 
+    res.cookie(
+      REFRESH_TOKEN_COOKIE,
+      result.refreshToken,
+      getRefreshTokenCookieOptions(result.refreshTokenExpiresAt),
+    );
     res.status(200).json({
       message: "Google login success",
-      data: result,
+      token: result.token,
+      user: result.user,
     });
-  } catch (error: any) {
-    res.status(400).json({
-      message: error.message
-    });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const facebookLogin = async (req: Request, res: Response) => {
+export const facebookLogin = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { accessToken } = req.body;
-    if (!accessToken) throw new Error("Facebook access token is required");
+    if (!accessToken) throw new AppError("Facebook access token is required", 400);
 
     const result = await authService.facebookLogin(accessToken);
 
+    res.cookie(
+      REFRESH_TOKEN_COOKIE,
+      result.refreshToken,
+      getRefreshTokenCookieOptions(result.refreshTokenExpiresAt),
+    );
     res.status(200).json({
       message: "Facebook login success",
-      data: result,
+      token: result.token,
+      user: result.user,
     });
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 

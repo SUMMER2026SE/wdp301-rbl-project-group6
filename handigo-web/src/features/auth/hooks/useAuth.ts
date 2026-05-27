@@ -22,12 +22,42 @@ export const useAuth = () => {
     }
   };
 
+  const googleLogin = async (credential: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await authService.googleLogin(credential);
+      return response.user;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google login failed');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const facebookLogin = async (accessToken: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await authService.facebookLogin(accessToken);
+      return response.user;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Facebook login failed');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     user,
     isAuthenticated,
     isLoading,
     error,
     login,
-    logout
+    googleLogin,
+    facebookLogin,
+    logout,
   };
 };
