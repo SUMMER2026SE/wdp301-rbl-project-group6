@@ -1,13 +1,22 @@
+interface FacebookSdk {
+  init: (config: {
+    appId: string;
+    cookie: boolean;
+    xfbml: boolean;
+    version: string;
+  }) => void;
+}
+
 declare global {
   interface Window {
-    FB: any;
+    FB: FacebookSdk;
     fbAsyncInit: () => void;
   }
 }
 
 export const loadFacebookSDK = () => {
 
-  return new Promise((resolve) => {
+  return new Promise<FacebookSdk>((resolve) => {
 
     if (window.FB) {
       resolve(window.FB);
