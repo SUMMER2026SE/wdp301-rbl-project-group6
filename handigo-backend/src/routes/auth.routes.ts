@@ -26,6 +26,8 @@ router.post(
   authController.resendRegisterOtp,
 );
 router.post("/login", validate(loginSchema), authController.login);
+router.post("/google-login", authController.googleLogin);
+router.post("/facebook-login", authController.facebookLogin);
 router.post("/refresh-token", authController.refreshToken);
 router.post(
   "/forgot-password",

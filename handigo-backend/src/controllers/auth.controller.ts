@@ -106,6 +106,40 @@ export const refreshToken = async (
   }
 };
 
+export const googleLogin = async (req: Request, res: Response) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) throw new Error("Google credential is required");
+
+    const result = await authService.googleLogin(credential);
+
+    res.status(200).json({
+      message: "Google login success",
+      data: result,
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      message: error.message
+    });
+  }
+};
+
+export const facebookLogin = async (req: Request, res: Response) => {
+  try {
+    const { accessToken } = req.body;
+    if (!accessToken) throw new Error("Facebook access token is required");
+
+    const result = await authService.facebookLogin(accessToken);
+
+    res.status(200).json({
+      message: "Facebook login success",
+      data: result,
+    });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export const forgotPassword = async (
   req: Request,
   res: Response,
